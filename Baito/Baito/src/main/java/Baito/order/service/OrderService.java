@@ -1,5 +1,6 @@
 package Baito.order.service;
 
+import Baito.order.dto.CreateOrderRequest;
 import Baito.order.model.Order;
 import Baito.product.product.Product;
 
@@ -14,5 +15,12 @@ public interface OrderService {
 
     Order updateStatus(Long orderId, String status);
 
-    Order createOrder(List<Long> product, String username, String phone, String address, Long id);
+    Order createOrder(CreateOrderRequest request, Long userId);
+    // Add product to existing order
+    // Increase product quantity in order
+    Order increaseQuantity(Long orderId, Long productId, Integer quantityToAdd);
+
+    // Decrease product quantity in order
+    Order decreaseQuantity(Long orderId, Long productId, Integer quantityToReduce);
+
 }
