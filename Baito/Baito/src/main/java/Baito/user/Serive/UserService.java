@@ -6,6 +6,7 @@ import Baito.user.dto.UserResponse;
 import Baito.user.user.User;
 import Baito.user.utils.Encoder;
 import Baito.user.utils.JsonWebToken;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 
@@ -59,5 +60,6 @@ public class UserService {
 
         return new UserResponse(authToken, "User registered successfully 🎉");
     }
+
 
 }

@@ -26,6 +26,7 @@ public class UserController {
     public UserResponse signIn(@Valid @RequestBody UserRequest userRequest){
         return userService.signIn(userRequest);
     }
+
     @GetMapping("/users/me")
     public User getUser(@RequestAttribute("authenticatedUser") User user) {
         return user;
