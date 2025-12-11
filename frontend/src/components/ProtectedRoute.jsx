@@ -2,12 +2,9 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// 🛡️ Protected Route Component
-// Redirects to login if user is not authenticated
 export const ProtectedRoute = ({ children }) => {
   const { token, loading } = useAuth();
 
-  // Show loading state while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-blue-50">
@@ -19,11 +16,5 @@ export const ProtectedRoute = ({ children }) => {
     );
   }
 
-  // If no token, redirect to login
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // If authenticated, render the protected page
-  return children;
+  return token ? children : <Navigate to="/login" replace />;
 };

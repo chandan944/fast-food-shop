@@ -1,5 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { api } from '../services/api';
+import { authAPI } from '../services/api';
+
+// Admin emails list
+const ADMIN_EMAILS = ['max@gmail.com', 'chandan@gmail.com'];
 
 // Create context
 const AuthContext = createContext(null);
@@ -10,19 +13,17 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  // 🔄 Check authentication on app load
+  // Check authentication on mount
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initAuth = async () => {
       const savedToken = localStorage.getItem('token');
       
       if (savedToken) {
         try {
-          // Verify token by fetching user data
-          const userData = await api.getCurrentUser();
+          const userData = await authAPI.getCurrentUser();
           setUser(userData);
           setToken(savedToken);
         } catch (error) {
-          // Token is invalid, clear it
           console.error('Token validation failed:', error);
           localStorage.removeItem('token');
           setToken(null);
@@ -33,55 +34,52 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     };
 
-    initializeAuth();
+    initAuth();
   }, []);
 
-  // 🔐 Login function
+  // Login function
   const login = async (email, password) => {
+    // eslint-disable-next-line no-useless-catch
     try {
-      const data = await api.login(email, password);
-      
-      // Save token to localStorage
+      const data = await authAPI.login(email, password);
       localStorage.setItem('token', data.token);
       setToken(data.token);
       
-      // Fetch user data
-      const userData = await api.getCurrentUser();
+      const userData = await authAPI.getCurrentUser();
       setUser(userData);
       
       return { success: true, message: data.message };
     } catch (error) {
-      console.error('Login error:', error);
-      throw new Error(error.response?.data?.message || 'Login failed');
+      throw error;
     }
   };
 
-  // 🆕 Signup function
+  // Signup function
   const signup = async (userData) => {
+    // eslint-disable-next-line no-useless-catch
     try {
-      const data = await api.signup(userData);
-      
-      // Save token to localStorage
+      const data = await authAPI.signup(userData);
       localStorage.setItem('token', data.token);
       setToken(data.token);
       
-      // Fetch user data
-      const user = await api.getCurrentUser();
+      const user = await authAPI.getCurrentUser();
       setUser(user);
       
       return { success: true, message: data.message };
     } catch (error) {
-      console.error('Signup error:', error);
-      throw new Error(error.response?.data?.message || 'Signup failed');
+      throw error;
     }
   };
 
-  // 🚪 Logout function
+  // Logout function
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
   };
+
+  // Check if user is admin
+  const isAdmin = user && ADMIN_EMAILS.includes(user.email);
 
   const value = {
     user,
@@ -91,17 +89,18 @@ export const AuthProvider = ({ children }) => {
     signup,
     logout,
     isAuthenticated: !!token,
+    isAdmin,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use auth context
+// Custom hook
 // eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };

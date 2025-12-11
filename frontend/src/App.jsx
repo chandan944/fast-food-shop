@@ -5,6 +5,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { SignUp } from './pages/SignUp';
 import { Home } from './pages/Home';
+import { ProductCard } from './components/ProductCard';
 
 function App() {
   return (
@@ -21,6 +22,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <Home />
+              </ProtectedRoute>
+            }
+          />
+
+           <Route
+            path="/product/:productId"
+            element={
+              <ProtectedRoute>
+                <ProductCard/>
               </ProtectedRoute>
             }
           />

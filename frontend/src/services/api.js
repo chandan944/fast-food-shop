@@ -1,8 +1,7 @@
-// 🔧 Axios setup for API calls with proper error handling
+// 🔧 Complete API Service for Products & Auth
 import axios from 'axios';
-import toast from 'react-hot-toast';
 
-const BASE_URL = 'http://localhost:8080/api/v1/authentication';
+const BASE_URL = 'http://localhost:8080/api/v1';
 
 // Create axios instance
 const apiClient = axios.create({
@@ -12,7 +11,7 @@ const apiClient = axios.create({
   },
 });
 
-// Add request interceptor to include token in headers
+// Add request interceptor to include token
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -24,90 +23,165 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ⭐ GLOBAL ERROR HANDLER ⭐
-// Handles duplicate entries, SQL errors, login errors, etc.
+// Add response interceptor for error handling
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    let errorMessage = "❌ Something went wrong.";
-    let extracted = null;
+    let errorMessage = 'An error occurred';
 
-    // When backend sends response
     if (error.response) {
-      const { data, status } = error.response;
-
-      // 1️⃣ Main backend message
-      if (data?.message) {
+      const { data } = error.response;
+      
+      if (data.message) {
         errorMessage = data.message;
+      } else if (data.error) {
+        errorMessage = data.error;
       }
 
-      // 2️⃣ Extract (+91xxxx...) from SQL detail
-      if (data?.details) {
-        const match = data.details.match(/\((.*?)\)/);  
-        if (match && match[1]) {
-          extracted = `${match[1]} already exists ❌`;
-        }
+      // Handle specific errors
+      if (errorMessage.includes('duplicate') || errorMessage.includes('already exists') || errorMessage.includes('users_email_key')) {
+        errorMessage = '❌ This email is already registered. Please use a different email or login.';
       }
-
-      // Prefer extracted phone/email → fallback to backend message
-      errorMessage = extracted || errorMessage;
-
-      // 3️⃣ Status-based error overrides
-      if (status === 401) errorMessage = "❌ Invalid credentials.";
-      if (status === 403) errorMessage = "❌ Access denied.";
-      if (status === 404) errorMessage = "❌ Resource not found.";
-      if (status >= 500) errorMessage = "❌ Server error. Try later.";
+      
+      // Handle authorization errors
+      if (error.response.status === 403) {
+        errorMessage = '❌ You do not have permission to perform this action. Only admin users can create/edit/delete products.';
+      }
+    } else if (error.request) {
+      errorMessage = '❌ Cannot connect to server. Please check your connection.';
     }
 
-    // Server unreachable
-    else if (error.request) {
-      errorMessage = "❌ Cannot reach server. Check your internet.";
-    }
-
-    // Unknown error
-    else {
-      errorMessage = error.message || "❌ Unexpected error.";
-    }
-
-    // Attach readable message
     error.userMessage = errorMessage;
-
     return Promise.reject(error);
   }
 );
 
-// API functions
-export const api = {
-  // 🔐 Login
+// ============================================
+// 🔐 AUTHENTICATION APIs
+// ============================================
+export const authAPI = {
   login: async (email, password) => {
     try {
-      const response = await apiClient.post('/login', { email, password });
+      const response = await apiClient.post('/authentication/login', { email, password });
       return response.data;
     } catch (error) {
-      toast.error(error.userMessage);
-      throw error;
+      throw new Error(error.userMessage || 'Login failed');
     }
   },
 
-  // 🆕 Signup
   signup: async (userData) => {
     try {
-      const response = await apiClient.post('/signin', userData);
+      const response = await apiClient.post('/authentication/signin', userData);
       return response.data;
     } catch (error) {
-      toast.error(error.userMessage);
-      throw error;
+      throw new Error(error.userMessage || 'Signup failed');
     }
   },
 
-  // 🙋 Get current user
   getCurrentUser: async () => {
     try {
-      const response = await apiClient.get('/users/me');
+      const response = await apiClient.get('/authentication/users/me');
       return response.data;
     } catch (error) {
-      toast.error(error.userMessage);
-      throw error;
+      throw new Error(error.userMessage || 'Failed to fetch user');
+    }
+  },
+};
+
+// ============================================
+// 📦 PRODUCT APIs - USING FORM-DATA
+// ============================================
+export const productAPI = {
+  // Get all products (public)
+  getAllProducts: async () => {
+    try {
+      const response = await apiClient.get('/product');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.userMessage || 'Failed to fetch products');
+    }
+  },
+
+  // Get single product (public)
+  getProduct: async (productId) => {
+    try {
+      const response = await apiClient.get(`/product/${productId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.userMessage || 'Failed to fetch product');
+    }
+  },
+
+  // Create product (admin only) - USING FORM-DATA
+  createProduct: async (productData) => {
+    try {
+      // 🔥 Create FormData object for multipart/form-data
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      formData.append('imgUrl', productData.imgUrl || '');
+      formData.append('description', productData.description);
+      formData.append('price', productData.price.toString());
+      formData.append('isAvailable', productData.isAvailable.toString());
+
+      console.log('📤 Sending product data:', {
+        name: productData.name,
+        imgUrl: productData.imgUrl,
+        description: productData.description,
+        price: productData.price,
+        isAvailable: productData.isAvailable
+      });
+
+      const response = await apiClient.post('/product', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('✅ Product created:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Create product error:', error);
+      throw new Error(error.userMessage || 'Failed to create product');
+    }
+  },
+
+  // Update product (admin only) - USING FORM-DATA
+  updateProduct: async (productId, productData) => {
+    try {
+      // 🔥 Create FormData object for multipart/form-data
+      const formData = new FormData();
+      formData.append('name', productData.name);
+      formData.append('imgUrl', productData.imgUrl || '');
+      formData.append('description', productData.description);
+      formData.append('price', productData.price.toString());
+      formData.append('isAvailable', productData.isAvailable.toString());
+
+      console.log('📤 Updating product:', productId, productData);
+
+      const response = await apiClient.put(`/product/${productId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('✅ Product updated:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Update product error:', error);
+      throw new Error(error.userMessage || 'Failed to update product');
+    }
+  },
+
+  // Delete product (admin only)
+  deleteProduct: async (productId) => {
+    try {
+      console.log('🗑️ Deleting product:', productId);
+      const response = await apiClient.delete(`/product/${productId}`);
+      console.log('✅ Product deleted');
+      return response.data;
+    } catch (error) {
+      console.error('❌ Delete product error:', error);
+      throw new Error(error.userMessage || 'Failed to delete product');
     }
   },
 };
