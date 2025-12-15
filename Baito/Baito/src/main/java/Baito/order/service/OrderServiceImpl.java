@@ -51,6 +51,7 @@ public class OrderServiceImpl implements OrderService {
                 .username(request.getUsername())
                 .phone(request.getPhone())
                 .address(request.getAddress())
+                .price(request.getPrice())
                 .status("PENDING")
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -23,6 +23,7 @@ public class Order {
     private String username;
     private String phone;
     private String address;
+    private Long price;
     private String status = "PENDING";
     private LocalDateTime createdAt = LocalDateTime.now();
 
