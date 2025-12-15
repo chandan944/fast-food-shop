@@ -2,6 +2,7 @@ package Baito.product.Controller;
 
 import Baito.dto.Response;
 import Baito.product.Service.ProductService;
+import Baito.product.dto.ProductRequest;
 import Baito.product.product.Product;
 import Baito.user.user.User;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,10 @@ public class ProductController {
     // allowed emails
     private static final List<String> ALLOWED_ADMIN_EMAILS = List.of(
             "max@gmail.com",
-            "chandan@gmail.com"
+            "chandan@gmail.com",
+            "rohit@gmail.com",
+            "priyanshu@gmail.com",
+            "admin@gmail.com"
     );
 
     public ProductController(ProductService productService) {
@@ -60,20 +64,26 @@ public class ProductController {
     }
 
     @PutMapping("/{productId}")
-    public ResponseEntity<Product> UpdateProduct(
+    public ResponseEntity<Product> updateProduct(
             @PathVariable Long productId,
-            @RequestParam("name") String name,
-            @RequestParam("imgUrl") String imgUrl,
-            @RequestParam("description") String description,
-            @RequestParam("price") Integer price,
-            @RequestParam("isAvailable") Boolean isAvailable,
-            @RequestAttribute("authenticatedUser") User user){
+            @RequestBody ProductRequest request,
+            @RequestAttribute("authenticatedUser") User user
+    ) {
+        checkAdminPermission(user); // 🔥 important
 
-        checkAdminPermission(user);  // 🔥 important
+        Product updatedProduct = productService.UpdateProduct(
+                productId,
+                request.getName(),
+                request.getImgUrl(),
+                request.getDescription(),
+                request.getPrice(),
+                request.getIsAvailable(),
+                user.getId()
+        );
 
-        Product updatedProduct = productService.UpdateProduct(productId ,name ,imgUrl ,description ,price ,isAvailable , user.getId());
         return ResponseEntity.ok(updatedProduct);
     }
+
 
     @DeleteMapping("/{productId}")
     public ResponseEntity<Response> deleteProduct(@PathVariable Long productId,

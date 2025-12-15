@@ -17,7 +17,10 @@ public class OrderController {
 
     private static final List<String> ALLOWED_ADMIN_EMAILS = List.of(
             "max@gmail.com",
-            "chandan@gmail.com"
+            "chandan@gmail.com",
+            "rohit@gmail.com",
+            "priyanshu@gmail.com",
+            "admin@gmail.com"
     );
 
     public OrderController(OrderService orderService) {

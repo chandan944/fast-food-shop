@@ -20,7 +20,9 @@ public class ProductService {
 
     // 🔒 only allow specific emails
     private void validateAdminAccess(User user) {
-        List<String> allowedAdmins = List.of("max@gmail.com", "chandan@gmail.com");
+        List<String> allowedAdmins = List.of("max@gmail.com", "chandan@gmail.com", "rohit@gmail.com",
+                "priyanshu@gmail.com",
+                "admin@gmail.com");
 
         if (!allowedAdmins.contains(user.getEmail())) {
             throw new RuntimeException("Access Denied: You are not allowed to manage products.");

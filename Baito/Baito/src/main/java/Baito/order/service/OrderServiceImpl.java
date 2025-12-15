@@ -176,12 +176,12 @@ public class OrderServiceImpl implements OrderService {
     public List<Order> getAdminOrders(String filter) {
 
         if (filter == null || filter.isEmpty()) {
-            return orderRepo.findAll();
+            return orderRepo.findAllByOrderByCreatedAtDesc(); // ⬇️ Latest first
         }
 
-        // Filter by status: PENDING / COMPLETED / CANCELED
-        return orderRepo.findByStatus(filter.toUpperCase());
+        return orderRepo.findByStatusOrderByCreatedAtDesc(filter.toUpperCase());
     }
+
 
     @Override
     public Order updateStatus(Long orderId, String status) {
